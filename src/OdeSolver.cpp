@@ -1,45 +1,42 @@
+#include <cstring>
 #include "OdeSolver.hpp"
 #include "OdeSystem.hpp"
 
 using namespace sm_utils;
 
-std::vector<double> sm_utils::euler1(OdeSystem system, double start, double stepsize, std::vector<double> initialValues)
+double *sm_utils::euler1(const OdeSystem &system, double start, double stepsize, double *initialValues)
 {
-  std::vector<double> dy = system.eval(start, initialValues);
-  auto it = initialValues.begin();
-  for (auto &i : dy)
-  {
-    *it += stepsize * i;
-    ++it;
-  }
-  return initialValues;
+  double *dy = system.eval(start, initialValues);
+  double *solutions = new double[system.size()];
+  for (size_t i = 0; i < system.size(); ++i)
+    solutions[i] = initialValues[i] + stepsize * dy[i];
+  delete[] dy;
+  return solutions;
 }
 
-std::vector<double> sm_utils::euler2(OdeSystem system, double start, double stepsize, std::vector<double> initialValues)
+double *sm_utils::euler2(const OdeSystem &system, double start, double stepsize, double *initialValues)
 {
-  std::vector<double> dy1 = system.eval(start, initialValues);
-  std::vector<double> ystar = euler1(system, start + stepsize, stepsize, initialValues);
-  std::vector<double> dy2 = system.eval(start + stepsize, ystar);
-  auto it = initialValues.begin();
-  auto dy2it = dy2.begin();
+  double *dy1 = system.eval(start, initialValues);
+  double *ystar = euler1(system, start, stepsize, initialValues);
+  double *dy2 = system.eval(start + stepsize, ystar);
+  delete[] ystar;
   double h2 = stepsize / 2;
-  for (auto &i : dy1)
-  {
-    *it += h2 * (*dy2it + i);
-    ++it;
-    ++dy2it;
-  }
-  return initialValues;
+  double *solutions = new double[system.size()];
+  for (size_t i = 0; i < system.size(); ++i)
+    solutions[i] = initialValues[i] + h2 * (dy2[i] + dy1[i]);
+  delete[] dy2;
+  delete[] dy1;
+  return solutions;
 }
 
-std::vector<double> sm_utils::euler12Solve(OdeSystem system, double t, double start, std::vector<double> initialValues, double tol)
+double *sm_utils::euler12Solve(OdeSystem system, double t, double start, std::vector<double> initialValues, double tol)
 {
   // STUB
-  return std::vector<double>();
+  return nullptr;
 }
 
-std::vector<double> sm_utils::rungeKutta45Solve(OdeSystem system, double t, double start, std::vector<double> initialValues, double tol)
+double *sm_utils::rungeKutta45Solve(OdeSystem system, double t, double start, std::vector<double> initialValues, double tol)
 {
   // STUB
-  return std::vector<double>();
+  return nullptr;
 }

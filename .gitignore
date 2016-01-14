@@ -13,3 +13,4 @@ Makefile
 # Misc
 Thumbs.db
 Desktop.ini
+*.out

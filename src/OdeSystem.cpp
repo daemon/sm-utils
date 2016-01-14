@@ -8,11 +8,15 @@ void sm_utils::OdeSystem::addEquation(OdeSystem::StepFn callback)
   this->_equations.push_back(std::move(callback));
 }
 
-std::vector<double> sm_utils::OdeSystem::eval(double t, std::vector<double> values)
+double *sm_utils::OdeSystem::eval(double t, double *values) const
 {
-  std::vector<double> dy;
+  double *dy = new double[this->_equations.size()];
+  int i = 0;
   for (auto &eq : this->_equations)
-    dy.push_back(eq(t, values));
+  {
+    dy[i] = eq(t, values);
+   	++i;
+  }
 
   return dy;
 }

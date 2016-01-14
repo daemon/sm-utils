@@ -13,9 +13,10 @@ namespace sm_utils
 class OdeSystem
 {
 public:
-  using StepFn = std::function<double(double t, std::vector<double> values)>;
+  using StepFn = std::function<double(double t, double *values)>;
   void addEquation(StepFn callback);
-  std::vector<double> eval(double t, std::vector<double> values);
+  size_t size() const { return this->_equations.size(); }
+  double *eval(double t, double *values) const;
 
 private:
   std::vector<StepFn> _equations;
