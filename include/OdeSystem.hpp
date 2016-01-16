@@ -17,6 +17,7 @@ public:
   using StepFn = std::function<double(double t, double *values)>;
   void addEquation(StepFn callback) SM_ATTR_COLD;
   size_t size() const { return this->_equations.size(); }
+  void eval(double t, double *values, double *dy) const SM_ATTR_HOT;
   double *eval(double t, double *values) const SM_ATTR_HOT;
 
 private:

@@ -6,73 +6,101 @@
 
 using namespace sm_utils;
 
+#ifndef EULER_TEST_STEPS 
+  #define EULER_TEST_STEPS 10000000
+#endif
+#ifndef EULER_TEST_STEPSIZE 
+  #define EULER_TEST_STEPSIZE 0.0000001
+#endif
+
+
 static void test(const OdeSystem& system, double start, double stepsize, double *values)
 {
-  double *originalVals = values;
-  double *solutions;
-  for (int i = 0; i < 10000000; ++i)
+  double *originalValues = new double[system.size()];
+  for (size_t i = 0; i < system.size(); ++i)
+    originalValues[i] = values[i];
+  StepperHints hints;
+  createStepperHints(&hints, start, stepsize, values, system.size());
+  for (int i = 0; i < EULER_TEST_STEPS; ++i)
   {
-    solutions = euler1(system, start + i * stepsize, stepsize, values);
-    if (i != 0)
-      delete[] values;
-    values = solutions;
+    euler1(system, &hints);
+    for (size_t j = 0; j < system.size(); ++j)
+    {
+      hints.initialValues[j] = hints.output[j];
+      hints.start += EULER_TEST_STEPSIZE;
+    }
   }
-  std::cout << std::setprecision(15) << "First-order Euler: " << solutions[0] << std::endl;
-  delete[] solutions;
-  values = originalVals;
-  for (int i = 0; i < 10000000; ++i)
+  std::cout << std::setprecision(15) << "First-order Euler: " << hints.output[0] << std::endl;
+  destroyStepperHints(&hints);
+  StepperHints hints2;
+  createStepperHints(&hints2, start, stepsize, originalValues, system.size());
+  for (int i = 0; i < EULER_TEST_STEPS; ++i)
   {
-    solutions = euler2(system, start + i * stepsize, stepsize, values);
-    if (i != 0)
-      delete[] values;
-    values = solutions;
+    euler2(system, &hints2);
+    for (size_t j = 0; j < system.size(); ++j)
+    {
+      hints2.initialValues[j] = hints2.output[j];
+      hints2.start += EULER_TEST_STEPSIZE;
+    }
   }
-  std::cout << std::setprecision(15) << "Heun's method: " << solutions[0] << std::endl;
-  delete[] solutions;
+  std::cout << std::setprecision(15) << "Heun's method: " << hints2.output[0] << std::endl;
+  destroyStepperHints(&hints2);
+  delete[] originalValues;
 }
 
 static void testLorenz(const OdeSystem& system, double start, double stepsize, double *values)
 {
-  double *originalVals = values;
-  double *solutions;
+  double *originalValues = new double[system.size()];
+  for (size_t i = 0; i < system.size(); ++i)
+    originalValues[i] = values[i];
+  StepperHints hints;
+  createStepperHints(&hints, start, stepsize, values, system.size());
   std::cout << "Euler's method:" << std::endl;
   for (int i = 0; i <= 100000000; ++i)
   {
-    solutions = euler1(system, start + i * stepsize, stepsize, values);
+    euler1(system, &hints);
+    for (size_t j = 0; j < system.size(); ++j)
+    {
+      hints.initialValues[j] = hints.output[j];
+      hints.start += EULER_TEST_STEPSIZE;
+    }
     if (i != 0)
     {
       if (i % 5000000 == 0)
       {
-        double n = i / 10000000.0;
-        std::cout << std::setprecision(15) << "x(" << n << ") = " << solutions[0] << std::endl;
-        std::cout << std::setprecision(15) << "y(" << n << ") = " << solutions[1] << std::endl;
-        std::cout << std::setprecision(15) << "z(" << n << ") = " << solutions[2] << std::endl;
+        double n = i / (double) EULER_TEST_STEPS;
+        std::cout << std::setprecision(15) << "x(" << n << ") = " << hints.output[0] << std::endl;
+        std::cout << std::setprecision(15) << "y(" << n << ") = " << hints.output[1] << std::endl;
+        std::cout << std::setprecision(15) << "z(" << n << ") = " << hints.output[2] << std::endl;
       }
-      delete[] values;
     }
-    values = solutions;
   }
-  delete[] solutions;
-  values = originalVals;
+  StepperHints hints2;
+  createStepperHints(&hints2, start, stepsize, originalValues, system.size());
   std::cout << std::endl;
   std::cout << "Heun's method:" << std::endl;
   for (int i = 0; i <= 100000000; ++i)
   {
-    solutions = euler2(system, start + i * stepsize, stepsize, values);
+    euler2(system, &hints2);
+    for (size_t j = 0; j < system.size(); ++j)
+    {
+      hints2.initialValues[j] = hints2.output[j];
+      hints2.start += EULER_TEST_STEPSIZE;
+    }
     if (i != 0)
     {
       if (i % 5000000 == 0)
       {
-        double n = i / 10000000.0;
-        std::cout << std::setprecision(15) << "x(" << n << ") = " << solutions[0] << std::endl;
-        std::cout << std::setprecision(15) << "y(" << n << ") = " << solutions[1] << std::endl;
-        std::cout << std::setprecision(15) << "z(" << n << ") = " << solutions[2] << std::endl;
+        double n = i / (double) EULER_TEST_STEPS;
+        std::cout << std::setprecision(15) << "x(" << n << ") = " << hints2.output[0] << std::endl;
+        std::cout << std::setprecision(15) << "y(" << n << ") = " << hints2.output[1] << std::endl;
+        std::cout << std::setprecision(15) << "z(" << n << ") = " << hints2.output[2] << std::endl;
       }
-      delete[] values;
     }
-    values = solutions;
   }
-  delete[] solutions;
+  delete[] originalValues;
+  destroyStepperHints(&hints);
+  destroyStepperHints(&hints2);
 }
 
 int main(int argc, char **argv)
@@ -83,7 +111,8 @@ int main(int argc, char **argv)
   });
   std::cout << "Using stepsize=1E-7, start=0, target=1:" << std::endl;
   std::cout << "dy/dx = 2x, y(0) = 0" << std::endl;
-  test(system, 0, 0.0000001, new double[1]());
+  double value[1] = {0.0};
+  test(system, 0, EULER_TEST_STEPSIZE, value);
 
   system = OdeSystem();
   system.addEquation([](double t, double *values) {
@@ -97,7 +126,7 @@ int main(int argc, char **argv)
   double *values = new double[2];
   values[0] = 0;
   values[1] = 1;
-  test(system, 0, 0.0000001, values);
+  test(system, 0, EULER_TEST_STEPSIZE, values);
 
   system = OdeSystem();
   system.addEquation([](double t, double *values) {
@@ -115,7 +144,7 @@ int main(int argc, char **argv)
   values[2] = 1;
   std::cout << std::endl;
   std::cout << "Lorenz attractor (sigma = 10, beta = 8/3, rho = 28)" << std::endl;
-  testLorenz(system, 0, 0.0000001, values);
+  testLorenz(system, 0, EULER_TEST_STEPSIZE, values);
 
   std::cout << std::endl;
   std::cout << "Exact answers:" << std::endl;
